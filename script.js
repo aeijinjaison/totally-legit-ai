@@ -1,3 +1,26 @@
+/*
+ * LEGIT.ai — Sound Setup Instructions
+ * ════════════════════════════════════
+ * For real sound effects, create a /sounds/ folder
+ * in the repository root and add these files:
+ *
+ * 1. sounds/phaaa.mp3
+ *    The trending "PHAAA/bruh" meme sound effect
+ *    Get free version from: pixabay.com/sound-effects
+ *    Search: "bruh" or "fail" or "trombone fail"
+ *    OR record yourself saying PHAAA dramatically
+ *
+ * 2. sounds/collapse.mp3
+ *    Building collapse / explosion rumble sound
+ *    Get free version from: pixabay.com/sound-effects
+ *    Search: "building collapse" or "explosion rumble"
+ *    Must be: royalty-free, no attribution required
+ *
+ * Without these files, synthesized fallback sounds
+ * play automatically. The site works either way.
+ * ════════════════════════════════════
+ */
+
 /* ═══════════════════════════════════
    LEGIT.ai — Script Controller
    ═══════════════════════════════════ */
@@ -23,29 +46,9 @@ const SoundFX = {
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
         osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
     },
-    phaaa() {
-        if (!audioUnlocked) return;
-        const ctx = getAudioCtx(), now = ctx.currentTime;
-        const osc1 = ctx.createOscillator(), gain1 = ctx.createGain(), filter1 = ctx.createBiquadFilter();
-        osc1.connect(filter1); filter1.connect(gain1); gain1.connect(ctx.destination);
-        osc1.type = 'sawtooth';
-        osc1.frequency.setValueAtTime(300, now); osc1.frequency.exponentialRampToValueAtTime(60, now + 0.8);
-        filter1.type = 'lowpass'; filter1.frequency.setValueAtTime(800, now); filter1.frequency.exponentialRampToValueAtTime(100, now + 0.8); filter1.Q.value = 8;
-        gain1.gain.setValueAtTime(0.4, now); gain1.gain.setValueAtTime(0.4, now + 0.1); gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
-        osc1.start(now); osc1.stop(now + 0.9);
-        const osc2 = ctx.createOscillator(), gain2 = ctx.createGain();
-        osc2.connect(gain2); gain2.connect(ctx.destination); osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(80, now); osc2.frequency.exponentialRampToValueAtTime(30, now + 0.5);
-        gain2.gain.setValueAtTime(0.5, now); gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-        osc2.start(now); osc2.stop(now + 0.6);
-        const bufSz = ctx.sampleRate * 0.1, buf = ctx.createBuffer(1, bufSz, ctx.sampleRate), d = buf.getChannelData(0);
-        for (let i = 0; i < bufSz; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / bufSz);
-        const ns = ctx.createBufferSource(), ng = ctx.createGain(), nf = ctx.createBiquadFilter();
-        ns.buffer = buf; ns.connect(nf); nf.connect(ng); ng.connect(ctx.destination);
-        nf.type = 'bandpass'; nf.frequency.value = 1000;
-        ng.gain.setValueAtTime(0.3, now); ng.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-        ns.start(now);
-    },
+    // phaaa and collapse are overwritten after this object — see below
+    _phaaaPlaceholder() {},
+    _collapsePlaceholder() {},
     pop() {
         if (!audioUnlocked) return;
         const ctx = getAudioCtx(), osc = ctx.createOscillator(), gain = ctx.createGain();
@@ -86,33 +89,8 @@ const SoundFX = {
         gain.gain.setValueAtTime(0.05, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
         osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.04);
     },
-    collapse() {
-        if (!audioUnlocked) return;
-        const ctx = getAudioCtx(), now = ctx.currentTime;
-        const crO = ctx.createOscillator(), crG = ctx.createGain();
-        crO.connect(crG); crG.connect(ctx.destination); crO.type = 'sawtooth';
-        crO.frequency.setValueAtTime(150, now); crO.frequency.exponentialRampToValueAtTime(20, now + 0.3);
-        crG.gain.setValueAtTime(0.6, now); crG.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-        crO.start(now); crO.stop(now + 0.3);
-        const rSz = ctx.sampleRate * 3, rB = ctx.createBuffer(1, rSz, ctx.sampleRate), rD = rB.getChannelData(0);
-        for (let i = 0; i < rSz; i++) rD[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / rSz, 0.5);
-        const rS = ctx.createBufferSource(), rF = ctx.createBiquadFilter(), rG = ctx.createGain();
-        rS.buffer = rB; rS.connect(rF); rF.connect(rG); rG.connect(ctx.destination);
-        rF.type = 'lowpass'; rF.frequency.value = 150;
-        rG.gain.setValueAtTime(0, now + 0.1); rG.gain.linearRampToValueAtTime(0.8, now + 0.4); rG.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
-        rS.start(now + 0.1);
-        for (let d = 0; d < 12; d++) {
-            const dt = now + 0.2 + Math.random() * 2.5, dO = ctx.createOscillator(), dG = ctx.createGain();
-            dO.connect(dG); dG.connect(ctx.destination); dO.type = 'square'; dO.frequency.value = 200 + Math.random() * 800;
-            dG.gain.setValueAtTime(0.1 + Math.random() * 0.2, dt); dG.gain.exponentialRampToValueAtTime(0.001, dt + 0.1 + Math.random() * 0.2);
-            dO.start(dt); dO.stop(dt + 0.3);
-        }
-        const tO = ctx.createOscillator(), tG = ctx.createGain();
-        tO.connect(tG); tG.connect(ctx.destination); tO.type = 'sine';
-        tO.frequency.setValueAtTime(60, now + 0.5); tO.frequency.exponentialRampToValueAtTime(15, now + 1.5);
-        tG.gain.setValueAtTime(0, now + 0.5); tG.gain.linearRampToValueAtTime(0.9, now + 0.7); tG.gain.exponentialRampToValueAtTime(0.001, now + 3.0);
-        tO.start(now + 0.5); tO.stop(now + 3.0);
-    },
+    // collapse synth fallback — kept here as placeholder, real impl below
+    _collapseSynthPlaceholder() {},
     error() {
         if (!audioUnlocked) return;
         const ctx = getAudioCtx(), osc = ctx.createOscillator(), gain = ctx.createGain();
@@ -132,6 +110,127 @@ const SoundFX = {
             osc.start(t); osc.stop(t + 0.15);
         });
     }
+};
+
+// ═══ AUDIO FILE PRELOADER ═══
+const AudioFiles = {
+  collapse: null, phaaa: null, _loaded: {},
+  preload() {
+    const files = { collapse: './sounds/collapse.mp3', phaaa: './sounds/phaaa.mp3' };
+    Object.entries(files).forEach(([key, src]) => {
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.addEventListener('canplaythrough', () => { AudioFiles._loaded[key] = true; }, { once: true });
+      audio.addEventListener('error', () => { AudioFiles._loaded[key] = false; console.warn('LEGIT.ai: ' + src + ' not found. Using synthesized fallback.'); });
+      audio.src = src;
+      AudioFiles[key] = audio;
+    });
+  },
+  play(key, volume) {
+    if (!audioUnlocked) return;
+    volume = volume || 1.0;
+    const audio = AudioFiles[key];
+    if (!audio || AudioFiles._loaded[key] === false) {
+      if (key === 'collapse') SoundFX._collapsesynth();
+      if (key === 'phaaa') SoundFX._phaaasynth();
+      return;
+    }
+    try {
+      const clone = audio.cloneNode();
+      clone.volume = Math.max(0, Math.min(1, volume));
+      clone.play().catch(() => {
+        if (key === 'collapse') SoundFX._collapsesynth();
+        if (key === 'phaaa') SoundFX._phaaasynth();
+      });
+    } catch(e) {}
+  }
+};
+AudioFiles.preload();
+
+// ═══ PHAAA — mp3 wrapper + improved synth fallback ═══
+SoundFX.phaaa = function() {
+  if (!audioUnlocked) return;
+  AudioFiles.play('phaaa', 1.0);
+};
+SoundFX._phaaasynth = function() {
+  if (!audioUnlocked) return;
+  try {
+    const ctx = getAudioCtx(), now = ctx.currentTime;
+    // Layer 1: main descending wah
+    const o1 = ctx.createOscillator(), f1 = ctx.createBiquadFilter(), g1 = ctx.createGain();
+    o1.connect(f1); f1.connect(g1); g1.connect(ctx.destination);
+    o1.type = 'sawtooth';
+    o1.frequency.setValueAtTime(400, now); o1.frequency.exponentialRampToValueAtTime(40, now + 1.2);
+    f1.type = 'lowpass'; f1.frequency.setValueAtTime(2000, now); f1.frequency.exponentialRampToValueAtTime(60, now + 1.0);
+    f1.Q.setValueAtTime(12, now); f1.Q.linearRampToValueAtTime(4, now + 1.2);
+    g1.gain.setValueAtTime(0, now); g1.gain.linearRampToValueAtTime(0.7, now + 0.05);
+    g1.gain.setValueAtTime(0.7, now + 0.3); g1.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
+    o1.start(now); o1.stop(now + 1.3);
+    // Layer 2: thickness
+    const o2 = ctx.createOscillator(), f2 = ctx.createBiquadFilter(), g2 = ctx.createGain();
+    o2.connect(f2); f2.connect(g2); g2.connect(ctx.destination);
+    o2.type = 'sawtooth';
+    o2.frequency.setValueAtTime(200, now); o2.frequency.exponentialRampToValueAtTime(20, now + 1.2);
+    f2.type = 'lowpass'; f2.frequency.setValueAtTime(1000, now); f2.frequency.exponentialRampToValueAtTime(40, now + 1.0); f2.Q.value = 6;
+    g2.gain.setValueAtTime(0, now); g2.gain.linearRampToValueAtTime(0.5, now + 0.06); g2.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+    o2.start(now); o2.stop(now + 1.2);
+    // Layer 3: breathy PH attack
+    const phSz = Math.floor(ctx.sampleRate * 0.15), phB = ctx.createBuffer(1, phSz, ctx.sampleRate), phD = phB.getChannelData(0);
+    for (let i = 0; i < phSz; i++) phD[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / phSz, 2);
+    const phN = ctx.createBufferSource(), phF = ctx.createBiquadFilter(), phG = ctx.createGain();
+    phN.buffer = phB; phN.connect(phF); phF.connect(phG); phG.connect(ctx.destination);
+    phF.type = 'highpass'; phF.frequency.value = 2000;
+    phG.gain.setValueAtTime(0.4, now); phG.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    phN.start(now);
+    // Layer 4: sub bass thud
+    const sO = ctx.createOscillator(), sG = ctx.createGain();
+    sO.connect(sG); sG.connect(ctx.destination); sO.type = 'sine';
+    sO.frequency.setValueAtTime(120, now); sO.frequency.exponentialRampToValueAtTime(25, now + 0.8);
+    sG.gain.setValueAtTime(0, now); sG.gain.linearRampToValueAtTime(0.8, now + 0.04); sG.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+    sO.start(now); sO.stop(now + 0.9);
+    // Layer 5: pitch wobble
+    const wO = ctx.createOscillator(), wG = ctx.createGain();
+    wO.connect(wG); wG.connect(ctx.destination); wO.type = 'sine';
+    wO.frequency.setValueAtTime(180, now + 0.1); wO.frequency.setValueAtTime(160, now + 0.3);
+    wO.frequency.setValueAtTime(100, now + 0.6); wO.frequency.exponentialRampToValueAtTime(30, now + 1.1);
+    wG.gain.setValueAtTime(0, now + 0.1); wG.gain.linearRampToValueAtTime(0.3, now + 0.2); wG.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
+    wO.start(now + 0.1); wO.stop(now + 1.1);
+  } catch(e) {}
+};
+
+// ═══ COLLAPSE — mp3 wrapper + synth fallback ═══
+SoundFX.collapse = function() {
+  if (!audioUnlocked) return;
+  AudioFiles.play('collapse', 1.0);
+};
+SoundFX._collapsesynth = function() {
+  if (!audioUnlocked) return;
+  try {
+    const ctx = getAudioCtx(), now = ctx.currentTime;
+    const crO = ctx.createOscillator(), crG = ctx.createGain();
+    crO.connect(crG); crG.connect(ctx.destination); crO.type = 'sawtooth';
+    crO.frequency.setValueAtTime(150, now); crO.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+    crG.gain.setValueAtTime(0.6, now); crG.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    crO.start(now); crO.stop(now + 0.3);
+    const rSz = ctx.sampleRate * 3, rB = ctx.createBuffer(1, rSz, ctx.sampleRate), rD = rB.getChannelData(0);
+    for (let i = 0; i < rSz; i++) rD[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / rSz, 0.5);
+    const rS = ctx.createBufferSource(), rF = ctx.createBiquadFilter(), rG = ctx.createGain();
+    rS.buffer = rB; rS.connect(rF); rF.connect(rG); rG.connect(ctx.destination);
+    rF.type = 'lowpass'; rF.frequency.value = 150;
+    rG.gain.setValueAtTime(0, now + 0.1); rG.gain.linearRampToValueAtTime(0.8, now + 0.4); rG.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+    rS.start(now + 0.1);
+    for (let d = 0; d < 12; d++) {
+      const dt = now + 0.2 + Math.random() * 2.5, dO = ctx.createOscillator(), dG = ctx.createGain();
+      dO.connect(dG); dG.connect(ctx.destination); dO.type = 'square'; dO.frequency.value = 200 + Math.random() * 800;
+      dG.gain.setValueAtTime(0.1 + Math.random() * 0.2, dt); dG.gain.exponentialRampToValueAtTime(0.001, dt + 0.1 + Math.random() * 0.2);
+      dO.start(dt); dO.stop(dt + 0.3);
+    }
+    const tO = ctx.createOscillator(), tG = ctx.createGain();
+    tO.connect(tG); tG.connect(ctx.destination); tO.type = 'sine';
+    tO.frequency.setValueAtTime(60, now + 0.5); tO.frequency.exponentialRampToValueAtTime(15, now + 1.5);
+    tG.gain.setValueAtTime(0, now + 0.5); tG.gain.linearRampToValueAtTime(0.9, now + 0.7); tG.gain.exponentialRampToValueAtTime(0.001, now + 3.0);
+    tO.start(now + 0.5); tO.stop(now + 3.0);
+  } catch(e) {}
 };
 
 // ═══ 1. LOADING SCREEN ═══
@@ -917,7 +1016,7 @@ This document is certified 100% vibes-based. Do not cite in court.
     });
 }
 
-// ═══ COLLAPSE SEQUENCE ═══
+// ═══ COLLAPSE SEQUENCE (Per-Element) ═══
 function initCollapseSequence() {
     let collapseTriggered = false;
     return function triggerCollapse() {
@@ -925,45 +1024,112 @@ function initCollapseSequence() {
         collapseTriggered = true;
         document.body.classList.add('collapsing');
         try { SoundFX.collapse(); } catch(e) {}
-        const targets = [
-            ...document.querySelectorAll('.navbar, .ab-banner, .hero-section, .features-section, .fun-section, .quiz-section, .social-proof-section, .pricing-section, .app-section, .ghost-section, footer')
-        ].filter(el => el && el.id !== 'ending');
         setTimeout(() => {
+            const excludeIds = ['ending','confetti-canvas','toast','persistent-badge','sales-modal','review-modal'];
+            const excludeClasses = ['modal-overlay','debris-particle'];
+            const skipTags = ['HTML','BODY','SCRIPT','STYLE','META','LINK','HEAD','TITLE'];
             const isMobile = window.innerWidth <= 768;
+            const allEls = Array.from(document.querySelectorAll('*'));
+            const targets = allEls.filter(el => {
+                if (excludeIds.some(id => el.id === id || el.closest('#' + id))) return false;
+                if (excludeClasses.some(cls => el.classList.contains(cls) || el.closest('.' + cls))) return false;
+                if (skipTags.includes(el.tagName)) return false;
+                const r = el.getBoundingClientRect();
+                if (r.width === 0 || r.height === 0 || r.bottom < 0) return false;
+                const s = window.getComputedStyle(el);
+                if (s.display === 'none' || s.visibility === 'hidden' || parseFloat(s.opacity) === 0) return false;
+                return true;
+            });
+            function getType(el) {
+                const t = el.tagName, c = el.className || '';
+                if (['H1','H2','H3','H4','H5','H6'].includes(t)) return 'heading';
+                if (t === 'BUTTON') return 'button';
+                if (t === 'P' || t === 'SPAN' || t === 'A') return 'text';
+                if (c.includes && (c.includes('card') || c.includes('pricing') || c.includes('feature') || c.includes('testimonial'))) return 'card';
+                if (t === 'NAV' || (c.includes && (c.includes('navbar') || c.includes('nav')))) return 'nav';
+                if (t === 'IMG' || t === 'SVG' || t === 'CANVAS') return 'media';
+                if (c.includes && (c.includes('emoji') || c.includes('floater'))) return 'emoji';
+                if (t === 'INPUT' || t === 'TEXTAREA') return 'input';
+                return 'generic';
+            }
             targets.forEach(el => {
-                const delay = Math.random() * 800;
-                const rotation = (Math.random() * 60 - 30) * (isMobile ? 0.5 : 1);
+                const type = getType(el);
+                const rect = el.getBoundingClientRect();
+                const vDelay = (rect.top / window.innerHeight) * 600;
+                const delay = Math.max(0, vDelay + Math.random() * 400);
+                let dur = 1200 + Math.random() * 800, rotRange = 30, bounce = false, dir = 'down';
+                switch(type) {
+                    case 'heading': dur = 1000 + Math.random() * 600; rotRange = isMobile ? 8 : 15; break;
+                    case 'button': dur = 800 + Math.random() * 400; rotRange = isMobile ? 45 : 90; bounce = true; break;
+                    case 'text': dur = 1400 + Math.random() * 600; rotRange = isMobile ? 3 : 8; break;
+                    case 'card': dur = 1500 + Math.random() * 500; rotRange = isMobile ? 20 : 40; dir = 'sideways'; break;
+                    case 'nav': dur = 600; rotRange = 5; dir = 'up'; break;
+                    case 'emoji': dur = 2000 + Math.random() * 1000; rotRange = isMobile ? 90 : 360; break;
+                    case 'input': dur = 1000; rotRange = isMobile ? 10 : 20; bounce = true; break;
+                    default: rotRange = isMobile ? 15 : 30;
+                }
+                const rot = (Math.random() * rotRange * 2) - rotRange;
+                const drift = Math.random() * 200 - 100;
                 setTimeout(() => {
-                    el.style.transition = 'transform 2s cubic-bezier(0.25,0.46,0.45,0.94), opacity 1.5s ease';
-                    el.style.transformOrigin = Math.random() > 0.5 ? 'top left' : 'top right';
-                    el.style.transform = 'translateY(' + (window.innerHeight * 1.5) + 'px) rotate(' + rotation + 'deg)';
-                    el.style.opacity = '0';
+                    if (type === 'card') el.style.transformOrigin = 'bottom center';
+                    else if (type === 'nav') el.style.transformOrigin = 'top center';
+                    else el.style.transformOrigin = Math.random() > 0.5 ? 'center left' : 'center right';
+                    if (bounce) {
+                        el.style.transition = 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease';
+                        el.style.transform = 'translateY(-25px) rotate(' + (rot * 0.3) + 'deg)';
+                        setTimeout(() => {
+                            el.style.transition = 'transform ' + dur + 'ms cubic-bezier(0.55,0,1,0.45), opacity ' + (dur * 0.7) + 'ms ease ' + (dur * 0.3) + 'ms';
+                            el.style.transform = 'translateY(' + (window.innerHeight * 1.5) + 'px) translateX(' + drift + 'px) rotate(' + rot + 'deg)';
+                            el.style.opacity = '0';
+                        }, 220);
+                    } else {
+                        el.style.transition = 'transform ' + dur + 'ms cubic-bezier(0.55,0,1,0.45), opacity ' + (dur * 0.6) + 'ms ease ' + (dur * 0.4) + 'ms';
+                        if (dir === 'up') {
+                            el.style.transform = 'translateY(-' + (window.innerHeight * 1.5) + 'px) translateX(' + drift + 'px) rotate(' + rot + 'deg)';
+                        } else if (dir === 'sideways') {
+                            const sw = Math.random() > 0.5 ? 1 : -1;
+                            el.style.transform = 'translateY(' + window.innerHeight + 'px) translateX(' + (sw * window.innerWidth * 0.8) + 'px) rotate(' + (rot * 2) + 'deg)';
+                        } else {
+                            el.style.transform = 'translateY(' + (window.innerHeight * 1.5) + 'px) translateX(' + drift + 'px) rotate(' + rot + 'deg)';
+                        }
+                        el.style.opacity = '0';
+                    }
                 }, delay);
             });
-            const debrisCount = isMobile ? 15 : 30;
-            const colors = ['#6c63ff','#00d4aa','#ff4444','#ffffff','#ffb800'];
+            // Debris
+            const debrisCount = isMobile ? 20 : 40;
+            const colors = ['#6c63ff','#00d4aa','#ff4444','#ffffff','#ffb800','#ff6b9d','#8b5cf6'];
             for (let d = 0; d < debrisCount; d++) {
                 setTimeout(() => {
                     const p = document.createElement('div');
-                    const size = 4 + Math.random() * 12;
-                    const dur = 1000 + Math.random() * 1500;
-                    p.classList.add('debris-particle');
-                    p.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+(Math.random()*100)+'%;top:'+(-50+Math.random()*250)+'px;background:'+colors[Math.floor(Math.random()*colors.length)]+';border-radius:'+Math.random()*4+'px;transition:transform '+dur+'ms ease-in, opacity 0.5s ease '+(dur-500)+'ms;';
+                    const sz = 4 + Math.random() * 14, dur2 = 1000 + Math.random() * 2000;
+                    p.style.cssText = 'position:fixed;width:'+sz+'px;height:'+sz+'px;left:'+(Math.random()*100)+'%;top:'+(-20+Math.random()*300)+'px;background:'+colors[Math.floor(Math.random()*colors.length)]+';border-radius:'+(Math.random()>0.5?'50%':Math.random()*4+'px')+';z-index:9000;pointer-events:none;opacity:1;';
                     document.body.appendChild(p);
-                    setTimeout(() => { p.style.transform = 'translateY('+(window.innerHeight+200)+'px) rotate('+(180+Math.random()*540)+'deg)'; p.style.opacity = '0'; }, 50);
-                    setTimeout(() => { if (p.parentNode) p.parentNode.removeChild(p); }, dur + 600);
-                }, 500 + Math.random() * 800);
+                    setTimeout(() => { const dX = Math.random()*200-100; p.style.transition = 'transform '+dur2+'ms cubic-bezier(0.55,0,1,0.45), opacity 0.4s ease '+(dur2-400)+'ms'; p.style.transform = 'translateY('+(window.innerHeight+300)+'px) translateX('+dX+'px) rotate('+(180+Math.random()*720)+'deg)'; p.style.opacity = '0'; }, 30);
+                    setTimeout(() => { if (p.parentNode) p.parentNode.removeChild(p); }, dur2 + 500);
+                }, 200 + Math.random() * 1200);
             }
-        }, 200);
+            // Page shake
+            let sc = 0;
+            const si = setInterval(() => {
+                document.body.style.transform = 'translate(' + (Math.random()*10-5) + 'px,' + (Math.random()*6-3) + 'px)';
+                sc++;
+                if (sc > 20) { clearInterval(si); document.body.style.transform = ''; }
+            }, 80);
+        }, 300);
+        // Final screen after 4s
         setTimeout(() => {
+            document.body.style.transform = '';
+            document.body.classList.remove('collapsing');
             const fs = document.createElement('div');
+            fs.id = 'collapse-final-screen';
             fs.style.cssText = 'position:fixed;inset:0;background:#0a0a0f;z-index:9500;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 1s ease;';
-            fs.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:64px;margin-bottom:24px">🏚️</div><h1 style="font-size:clamp(24px,5vw,48px);font-weight:700;color:#ffffff;margin-bottom:16px">Well. That happened.</h1><p style="font-size:clamp(14px,2vw,18px);color:#888899;margin-bottom:8px">The website has experienced what engineers call</p><p style="font-size:clamp(18px,3vw,28px);color:#6c63ff;font-weight:700;margin-bottom:24px">"a totally planned structural event."</p><p style="font-size:clamp(12px,1.5vw,14px);color:#888899;margin-bottom:32px">Kevin has been notified. Kevin is also falling.</p><button id="btn-rebuild" style="background:#6c63ff;color:#ffffff;border:none;padding:14px 28px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;min-height:44px">🔨 Rebuild Everything</button><p style="font-size:11px;color:#888899;margin-top:12px">(This will reload the page. Kevin cannot be rebuilt.)</p></div>';
+            fs.innerHTML = '<div style="text-align:center;padding:40px 20px;max-width:560px"><div style="font-size:64px;margin-bottom:24px">🏚️</div><h1 style="font-size:clamp(24px,5vw,48px);font-weight:700;color:#ffffff;margin-bottom:16px">Well. That happened.</h1><p style="font-size:clamp(14px,2vw,18px);color:#888899;margin-bottom:8px">The website has experienced what engineers call</p><p style="font-size:clamp(18px,3vw,28px);color:#6c63ff;font-weight:700;margin-bottom:24px">"a totally planned structural event."</p><p style="font-size:clamp(12px,1.5vw,14px);color:#888899;margin-bottom:32px">Kevin has been notified. Kevin is also falling.</p><button id="btn-rebuild" style="background:#6c63ff;color:#ffffff;border:none;padding:14px 28px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;min-height:44px;transition:background 0.2s">🔨 Rebuild Everything</button><p style="font-size:11px;color:#888899;margin-top:12px">(This will reload the page. Kevin cannot be rebuilt.)</p></div>';
             document.body.appendChild(fs);
             setTimeout(() => { fs.style.opacity = '1'; }, 100);
             const rb = document.getElementById('btn-rebuild');
-            if (rb) rb.addEventListener('click', () => { try { SoundFX.tada(); } catch(e) {} setTimeout(() => window.location.reload(), 500); });
-        }, 3000);
+            if (rb) rb.addEventListener('click', () => { try { SoundFX.tada(); } catch(e) {} rb.textContent = 'Rebuilding... 🔧'; rb.disabled = true; setTimeout(() => window.location.reload(), 600); });
+        }, 4000);
     };
 }
 
