@@ -437,3 +437,17 @@ body.collapsing { overflow: hidden; }
     .waitlist-input-row { flex-direction: column; }
     .app-store-btn { min-width: 160px; }
 }
+
+/* ═══ COLLAPSE ANIMATION ═══ */
+.fall-letter {
+    display: inline-block;
+    will-change: transform, opacity;
+}
+body.collapsing {
+    overflow: hidden;
+}
+.debris-particle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9000;
+}
