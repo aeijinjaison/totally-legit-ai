@@ -2,6 +2,138 @@
    LEGIT.ai — Script Controller
    ═══════════════════════════════════ */
 
+// ═══ GLOBAL AUDIO SETUP ═══
+let audioCtx = null;
+let audioUnlocked = false;
+function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+}
+document.addEventListener('click', () => { audioUnlocked = true; if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, { once: false });
+document.addEventListener('touchstart', () => { audioUnlocked = true; if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, { once: false });
+
+const SoundFX = {
+    ding() {
+        if (!audioUnlocked) return;
+        const ctx = getAudioCtx(), osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
+    },
+    phaaa() {
+        if (!audioUnlocked) return;
+        const ctx = getAudioCtx(), now = ctx.currentTime;
+        const osc1 = ctx.createOscillator(), gain1 = ctx.createGain(), filter1 = ctx.createBiquadFilter();
+        osc1.connect(filter1); filter1.connect(gain1); gain1.connect(ctx.destination);
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(300, now); osc1.frequency.exponentialRampToValueAtTime(60, now + 0.8);
+        filter1.type = 'lowpass'; filter1.frequency.setValueAtTime(800, now); filter1.frequency.exponentialRampToValueAtTime(100, now + 0.8); filter1.Q.value = 8;
+        gain1.gain.setValueAtTime(0.4, now); gain1.gain.setValueAtTime(0.4, now + 0.1); gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+        osc1.start(now); osc1.stop(now + 0.9);
+        const osc2 = ctx.createOscillator(), gain2 = ctx.createGain();
+        osc2.connect(gain2); gain2.connect(ctx.destination); osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(80, now); osc2.frequency.exponentialRampToValueAtTime(30, now + 0.5);
+        gain2.gain.setValueAtTime(0.5, now); gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        osc2.start(now); osc2.stop(now + 0.6);
+        const bufSz = ctx.sampleRate * 0.1, buf = ctx.createBuffer(1, bufSz, ctx.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < bufSz; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / bufSz);
+        const ns = ctx.createBufferSource(), ng = ctx.createGain(), nf = ctx.createBiquadFilter();
+        ns.buffer = buf; ns.connect(nf); nf.connect(ng); ng.connect(ctx.destination);
+        nf.type = 'bandpass'; nf.frequency.value = 1000;
+        ng.gain.setValueAtTime(0.3, now); ng.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        ns.start(now);
+    },
+    pop() {
+        if (!audioUnlocked) return;
+        const ctx = getAudioCtx(), osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine';
+        osc.frequency.setValueAtTime(200, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.05);
+        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.15);
+    },
+    whoosh() {
+        if (!audioUnlocked) return;
+        const ctx = getAudioCtx(), sz = ctx.sampleRate * 0.3, buf = ctx.createBuffer(1, sz, ctx.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < sz; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / sz);
+        const src = ctx.createBufferSource(), flt = ctx.createBiquadFilter(), gain = ctx.createGain();
+        src.buffer = buf; src.connect(flt); flt.connect(gain); gain.connect(ctx.destination);
+        flt.type = 'bandpass'; flt.frequency.setValueAtTime(2000, ctx.currentTime); flt.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        src.start(ctx.currentTime);
+    },
+    tada() {
+        if (!audioUnlocked) return;
+        const ctx = getAudioCtx();
+        [523, 659, 784, 1047].forEach((freq, i) => {
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination); osc.type = 'triangle'; osc.frequency.value = freq;
+            const t = ctx.currentTime + i * 0.12;
+            gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.3, t + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+            osc.start(t); osc.stop(t + 0.4);
+        });
+    },
+    typewriter() {
+        if (!audioUnlocked) return;
+        const ctx = getAudioCtx(), osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination); osc.type = 'square';
+        osc.frequency.value = 800 + Math.random() * 400;
+        gain.gain.setValueAtTime(0.05, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.04);
+    },
+    collapse() {
+        if (!audioUnlocked) return;
+        const ctx = getAudioCtx(), now = ctx.currentTime;
+        const crO = ctx.createOscillator(), crG = ctx.createGain();
+        crO.connect(crG); crG.connect(ctx.destination); crO.type = 'sawtooth';
+        crO.frequency.setValueAtTime(150, now); crO.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+        crG.gain.setValueAtTime(0.6, now); crG.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        crO.start(now); crO.stop(now + 0.3);
+        const rSz = ctx.sampleRate * 3, rB = ctx.createBuffer(1, rSz, ctx.sampleRate), rD = rB.getChannelData(0);
+        for (let i = 0; i < rSz; i++) rD[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / rSz, 0.5);
+        const rS = ctx.createBufferSource(), rF = ctx.createBiquadFilter(), rG = ctx.createGain();
+        rS.buffer = rB; rS.connect(rF); rF.connect(rG); rG.connect(ctx.destination);
+        rF.type = 'lowpass'; rF.frequency.value = 150;
+        rG.gain.setValueAtTime(0, now + 0.1); rG.gain.linearRampToValueAtTime(0.8, now + 0.4); rG.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+        rS.start(now + 0.1);
+        for (let d = 0; d < 12; d++) {
+            const dt = now + 0.2 + Math.random() * 2.5, dO = ctx.createOscillator(), dG = ctx.createGain();
+            dO.connect(dG); dG.connect(ctx.destination); dO.type = 'square'; dO.frequency.value = 200 + Math.random() * 800;
+            dG.gain.setValueAtTime(0.1 + Math.random() * 0.2, dt); dG.gain.exponentialRampToValueAtTime(0.001, dt + 0.1 + Math.random() * 0.2);
+            dO.start(dt); dO.stop(dt + 0.3);
+        }
+        const tO = ctx.createOscillator(), tG = ctx.createGain();
+        tO.connect(tG); tG.connect(ctx.destination); tO.type = 'sine';
+        tO.frequency.setValueAtTime(60, now + 0.5); tO.frequency.exponentialRampToValueAtTime(15, now + 1.5);
+        tG.gain.setValueAtTime(0, now + 0.5); tG.gain.linearRampToValueAtTime(0.9, now + 0.7); tG.gain.exponentialRampToValueAtTime(0.001, now + 3.0);
+        tO.start(now + 0.5); tO.stop(now + 3.0);
+    },
+    error() {
+        if (!audioUnlocked) return;
+        const ctx = getAudioCtx(), osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination); osc.type = 'square';
+        osc.frequency.setValueAtTime(150, ctx.currentTime); osc.frequency.setValueAtTime(120, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
+    },
+    cash() {
+        if (!audioUnlocked) return;
+        const ctx = getAudioCtx();
+        [1200, 1600, 2000].forEach((freq, i) => {
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine'; osc.frequency.value = freq;
+            const t = ctx.currentTime + i * 0.06;
+            gain.gain.setValueAtTime(0.2, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+            osc.start(t); osc.stop(t + 0.15);
+        });
+    }
+};
+
 // ═══ 1. LOADING SCREEN ═══
 const loadingMessages = [
     "Initializing intelligence modules...",
@@ -45,6 +177,7 @@ function initLoadingScreen() {
                 appContent.classList.add('visible');
                 startDashboardAnimations();
                 startRotatingTagline();
+                try { SoundFX.ding(); } catch(e) {}
             }, 500);
             return;
         }
@@ -57,6 +190,7 @@ function initLoadingScreen() {
             messageEl.classList.add('visible');
             barEl.style.width = `${((idx + 1) / loadingMessages.length) * 100}%`;
             funFactEl.textContent = funFacts[idx] || '';
+            try { SoundFX.typewriter(); } catch(e) {}
         }, 250);
     }
 }
@@ -282,21 +416,22 @@ function initModal() {
         "Paused longest on the testimonials. Trust issues noted. Relatable, honestly.",
         "Arrived here with 7+ tabs open based on our completely unverified estimation."
     ];
-    function showView(v) { allSteps.forEach(s => { s.classList.remove('active'); s.classList.add('hidden'); }); v.classList.remove('hidden'); v.classList.add('active'); }
+    function showView(v) { allSteps.forEach(s => { s.classList.remove('active'); s.classList.add('hidden'); }); v.classList.remove('hidden'); v.classList.add('active'); if (v === step5) setTimeout(() => { try { SoundFX.phaaa(); } catch(e) {} }, 300); }
     function openModal(e) {
         if (e) e.preventDefault();
         modal.classList.remove('hidden');
+        try { SoundFX.whoosh(); } catch(e) {}
         if (userHasBeenReviewed) { showView(step5); return; }
         dateEl.textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
         reviewTextEl.textContent = reviewOptions[Math.floor(Math.random() * reviewOptions.length)];
         showView(step1);
     }
     document.querySelectorAll('.cta-btn').forEach(btn => btn.addEventListener('click', openModal));
-    closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    closeBtn.addEventListener('click', () => { modal.classList.add('hidden'); try { SoundFX.error(); } catch(e) {} });
     modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
-    btnOkayFine.addEventListener('click', () => showView(step2));
-    btnRespond.addEventListener('click', () => showView(step3));
-    btnSubmitResponse.addEventListener('click', () => showView(step4));
+    btnOkayFine.addEventListener('click', () => { try { SoundFX.pop(); } catch(e) {} showView(step2); });
+    btnRespond.addEventListener('click', () => { try { SoundFX.pop(); } catch(e) {} showView(step3); });
+    btnSubmitResponse.addEventListener('click', () => { try { SoundFX.pop(); } catch(e) {} showView(step4); });
     btnFinalOkay.addEventListener('click', () => { modal.classList.add('hidden'); badge.classList.remove('hidden'); userHasBeenReviewed = true; });
     btnRejectionClose.addEventListener('click', () => modal.classList.add('hidden'));
 
@@ -351,8 +486,11 @@ function initEndingSequence() {
     const observer = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && !triggered) {
             triggered = true;
-            lines.forEach((line, i) => { setTimeout(() => line.classList.add('visible'), delays[i]); });
+            lines.forEach((line, i) => { setTimeout(() => { line.classList.add('visible'); try { SoundFX.typewriter(); } catch(e) {} }, delays[i]); });
             setTimeout(() => endAction.classList.add('visible'), delays[10]);
+            // Collapse sequence: 2s after line-10 appears
+            const triggerCollapse = initCollapseSequence();
+            setTimeout(triggerCollapse, delays[9] + 2000);
         }
     }, { threshold: 0.4 });
     if (section) observer.observe(section);
@@ -362,6 +500,7 @@ function initEndingSequence() {
             btnFairEnough.disabled = true;
             endCredits.classList.add('visible');
             document.querySelector('.ending-section').classList.add('celebrating');
+            try { SoundFX.tada(); } catch(e) {}
             fireConfetti();
         });
     }
@@ -444,6 +583,7 @@ function initNotificationBell() {
             div.innerHTML = n.text + '<div class="notif-time">' + n.time + '</div>';
             div.addEventListener('click', () => {
                 if (!n.read) { n.read = true; updateBadge(); render(); }
+                try { SoundFX.pop(); } catch(e) {}
                 showToast("This notification has been marked as read. The notification disagrees. 🔔");
             });
             listEl.appendChild(div);
@@ -455,11 +595,11 @@ function initNotificationBell() {
         if (unread === 0) badgeEl.classList.add('hide'); else badgeEl.classList.remove('hide');
     }
     render();
-    bell.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); });
+    bell.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); try { SoundFX.ding(); } catch(e2) {} });
     document.addEventListener('click', (e) => { if (!dropdown.contains(e.target) && e.target !== bell) dropdown.classList.add('hidden'); });
     markRead.addEventListener('click', () => {
         notifications.forEach(n => n.read = true);
-        updateBadge(); render();
+        updateBadge(); render(); try { SoundFX.whoosh(); } catch(e) {}
         showToast("All notifications marked as read. They remain emotionally unresolved. 💔");
     });
 }
@@ -519,6 +659,7 @@ function initABBanner() {
         banner.classList.add('dismissed');
         document.body.style.paddingTop = '0';
         navbar.style.top = '0';
+        try { SoundFX.whoosh(); } catch(e) {}
     });
 }
 
@@ -529,6 +670,7 @@ function initPriceChange() {
     const proPrices = [499, 489, 512, 479, 523, 499, 505, 488, 499];
     let proPriceIdx = 0;
     let wasInView = true;
+    let pricingSoundPlayed = false;
     const pricingSection = document.getElementById('pricing');
     if (!pricingSection) return;
     const observer = new IntersectionObserver((entries) => {
@@ -543,10 +685,14 @@ function initPriceChange() {
             priceEl.innerHTML = '₹' + newPrice + '<span>/month</span>';
             priceEl.classList.add('flashing');
             priceEl.addEventListener('animationend', () => priceEl.classList.remove('flashing'), { once: true });
+            try { SoundFX.cash(); } catch(e) {}
+        }
+        if (isIntersecting && !pricingSoundPlayed) {
+            pricingSoundPlayed = true;
+            try { SoundFX.cash(); } catch(e) {}
         }
     }, { threshold: 0.1 });
     observer.observe(pricingSection);
-    // Mobile tap tooltip
     priceEl.addEventListener('click', () => { showToast("It does that. We've tried fixing it. Kevin says it's a feature. 🤷"); });
 }
 
@@ -581,6 +727,7 @@ function initSalesModal() {
     function showSalesStep(step) { allSteps.forEach(s => { s.classList.remove('active'); s.classList.add('hidden'); }); step.classList.remove('hidden'); step.classList.add('active'); }
     contactBtn.addEventListener('click', () => {
         modal.classList.remove('hidden');
+        try { SoundFX.whoosh(); } catch(e) {}
         showSalesStep(step1);
         let msgIdx = 0;
         holdBar.style.width = '0%'; holdBar.style.transition = 'none';
@@ -593,9 +740,9 @@ function initSalesModal() {
     });
     closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
     modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
-    btnLeaveVibe.addEventListener('click', () => showSalesStep(step3));
-    btnSendVibe.addEventListener('click', () => { vibeClass.textContent = vibeClassifications[Math.floor(Math.random() * vibeClassifications.length)]; showSalesStep(step4); });
-    btnSalesDone.addEventListener('click', () => { modal.classList.add('hidden'); showToast("Kevin has been notified. Kevin sends his regards. Kevin does not know what regards are. 🫡"); });
+    btnLeaveVibe.addEventListener('click', () => { try { SoundFX.pop(); } catch(e) {} showSalesStep(step3); });
+    btnSendVibe.addEventListener('click', () => { try { SoundFX.pop(); } catch(e) {} vibeClass.textContent = vibeClassifications[Math.floor(Math.random() * vibeClassifications.length)]; showSalesStep(step4); });
+    btnSalesDone.addEventListener('click', () => { try { SoundFX.error(); } catch(e) {} modal.classList.add('hidden'); showToast("Kevin has been notified. Kevin sends his regards. Kevin does not know what regards are. 🫡"); });
 }
 
 // ═══ FEATURE 7: PRODUCTIVITY QUIZ ═══
@@ -608,15 +755,27 @@ function initQuiz() {
     const startBtn = document.getElementById('btn-start-quiz');
     if (startBtn) startBtn.addEventListener('click', () => showQuizView('q1'));
     document.querySelectorAll('.quiz-option').forEach(btn => {
-        btn.addEventListener('click', () => showQuizView(btn.getAttribute('data-next')));
+        btn.addEventListener('click', () => { try { SoundFX.pop(); } catch(e) {} showQuizView(btn.getAttribute('data-next')); });
+    });
+    // phaaa on quiz result reveal
+    function showQuizViewOrig(key) {
+        Object.values(views).forEach(v => { if (v) { v.classList.remove('active'); v.classList.add('hidden'); } });
+        if (views[key]) { views[key].classList.remove('hidden'); views[key].classList.add('active'); }
+        if (key === 'result') setTimeout(() => { try { SoundFX.phaaa(); } catch(e) {} }, 500);
+    }
+    // Re-bind quiz options to use updated showQuizView with phaaa
+    document.querySelectorAll('.quiz-option').forEach(btn => {
+        btn.onclick = () => { try { SoundFX.pop(); } catch(e) {} showQuizViewOrig(btn.getAttribute('data-next')); };
     });
     const acceptBtn = document.getElementById('btn-accept-kevin');
     const denyBtn = document.getElementById('btn-deny-kevin');
     if (acceptBtn) acceptBtn.addEventListener('click', () => {
+        try { SoundFX.tada(); } catch(e) {}
         showToast("Kevin has been notified of your acceptance. Kevin is honored. Kevin is still in a meeting. 🙏");
         acceptBtn.textContent = "Welcome to the team, Kevin. 🎉"; acceptBtn.disabled = true;
     });
     if (denyBtn) denyBtn.addEventListener('click', () => {
+        try { SoundFX.error(); } catch(e) {}
         denyBtn.textContent = "You are Kevin. 🫵"; denyBtn.disabled = true;
         setTimeout(() => showToast("Denial noted. Added to your permanent record. Kevin also denied being Kevin. Initially. 😶"), 500);
     });
@@ -630,13 +789,14 @@ function initAppSection() {
     const emailInput = document.getElementById('waitlist-email');
     const waitlistLabel = document.getElementById('waitlist-label');
     const waitlistFine = document.getElementById('waitlist-fine');
-    function showAppToast() { showToast("Our app is in stealth mode. (It doesn't exist yet. The stealth is involuntary.) 👻"); }
+    function showAppToast() { try { SoundFX.error(); } catch(e) {} showToast("Our app is in stealth mode. (It doesn't exist yet. The stealth is involuntary.) 👻"); }
     if (appStoreBtn) appStoreBtn.addEventListener('click', showAppToast);
     if (playStoreBtn) playStoreBtn.addEventListener('click', showAppToast);
     if (submitBtn) submitBtn.addEventListener('click', () => {
         const email = emailInput.value.trim();
         const position = Math.floor(Math.random() * 8000) + 500;
-        if (!email || !email.includes('@')) { showToast("That doesn't look like an email. Our AI noticed. It judges. 👀"); return; }
+        if (!email || !email.includes('@')) { try { SoundFX.error(); } catch(e) {} showToast("That doesn't look like an email. Our AI noticed. It judges. 👀"); return; }
+        try { SoundFX.ding(); } catch(e) {}
         waitlistLabel.textContent = "You're on the waitlist!";
         waitlistLabel.style.color = 'var(--secondary)';
         waitlistFine.innerHTML = "You are number <strong>" + position + "</strong> on the list. Kevin is number 1. Kevin put himself there. 🏆";
@@ -654,7 +814,7 @@ function initExportReport() {
         btn.disabled = true; btn.textContent = '⏳ Generating...';
         let i = 0;
         const sequence = setInterval(() => {
-            if (i < toastMessages.length) { showToast(toastMessages[i]); i++; }
+            if (i < toastMessages.length) { showToast(toastMessages[i]); try { SoundFX.typewriter(); } catch(e) {} i++; }
             else {
                 clearInterval(sequence);
                 const today = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
@@ -750,9 +910,67 @@ This document is certified 100% vibes-based. Do not cite in court.
                     printWindow.document.close();
                 }
                 btn.disabled = false; btn.textContent = '📄 Export Report';
+                try { SoundFX.tada(); } catch(e) {}
                 showToast("Report generated. Use 'Save as PDF' in the print dialog. Kevin stands by its contents. 📋");
             }
         }, 1000);
+    });
+}
+
+// ═══ COLLAPSE SEQUENCE ═══
+function initCollapseSequence() {
+    let collapseTriggered = false;
+    return function triggerCollapse() {
+        if (collapseTriggered) return;
+        collapseTriggered = true;
+        document.body.classList.add('collapsing');
+        try { SoundFX.collapse(); } catch(e) {}
+        const targets = [
+            ...document.querySelectorAll('.navbar, .ab-banner, .hero-section, .features-section, .fun-section, .quiz-section, .social-proof-section, .pricing-section, .app-section, .ghost-section, footer')
+        ].filter(el => el && el.id !== 'ending');
+        setTimeout(() => {
+            const isMobile = window.innerWidth <= 768;
+            targets.forEach(el => {
+                const delay = Math.random() * 800;
+                const rotation = (Math.random() * 60 - 30) * (isMobile ? 0.5 : 1);
+                setTimeout(() => {
+                    el.style.transition = 'transform 2s cubic-bezier(0.25,0.46,0.45,0.94), opacity 1.5s ease';
+                    el.style.transformOrigin = Math.random() > 0.5 ? 'top left' : 'top right';
+                    el.style.transform = 'translateY(' + (window.innerHeight * 1.5) + 'px) rotate(' + rotation + 'deg)';
+                    el.style.opacity = '0';
+                }, delay);
+            });
+            const debrisCount = isMobile ? 15 : 30;
+            const colors = ['#6c63ff','#00d4aa','#ff4444','#ffffff','#ffb800'];
+            for (let d = 0; d < debrisCount; d++) {
+                setTimeout(() => {
+                    const p = document.createElement('div');
+                    const size = 4 + Math.random() * 12;
+                    const dur = 1000 + Math.random() * 1500;
+                    p.classList.add('debris-particle');
+                    p.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+(Math.random()*100)+'%;top:'+(-50+Math.random()*250)+'px;background:'+colors[Math.floor(Math.random()*colors.length)]+';border-radius:'+Math.random()*4+'px;transition:transform '+dur+'ms ease-in, opacity 0.5s ease '+(dur-500)+'ms;';
+                    document.body.appendChild(p);
+                    setTimeout(() => { p.style.transform = 'translateY('+(window.innerHeight+200)+'px) rotate('+(180+Math.random()*540)+'deg)'; p.style.opacity = '0'; }, 50);
+                    setTimeout(() => { if (p.parentNode) p.parentNode.removeChild(p); }, dur + 600);
+                }, 500 + Math.random() * 800);
+            }
+        }, 200);
+        setTimeout(() => {
+            const fs = document.createElement('div');
+            fs.style.cssText = 'position:fixed;inset:0;background:#0a0a0f;z-index:9500;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 1s ease;';
+            fs.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:64px;margin-bottom:24px">🏚️</div><h1 style="font-size:clamp(24px,5vw,48px);font-weight:700;color:#ffffff;margin-bottom:16px">Well. That happened.</h1><p style="font-size:clamp(14px,2vw,18px);color:#888899;margin-bottom:8px">The website has experienced what engineers call</p><p style="font-size:clamp(18px,3vw,28px);color:#6c63ff;font-weight:700;margin-bottom:24px">"a totally planned structural event."</p><p style="font-size:clamp(12px,1.5vw,14px);color:#888899;margin-bottom:32px">Kevin has been notified. Kevin is also falling.</p><button id="btn-rebuild" style="background:#6c63ff;color:#ffffff;border:none;padding:14px 28px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;min-height:44px">🔨 Rebuild Everything</button><p style="font-size:11px;color:#888899;margin-top:12px">(This will reload the page. Kevin cannot be rebuilt.)</p></div>';
+            document.body.appendChild(fs);
+            setTimeout(() => { fs.style.opacity = '1'; }, 100);
+            const rb = document.getElementById('btn-rebuild');
+            if (rb) rb.addEventListener('click', () => { try { SoundFX.tada(); } catch(e) {} setTimeout(() => window.location.reload(), 500); });
+        }, 3000);
+    };
+}
+
+// ═══ SOUND BINDINGS ═══
+function initSoundBindings() {
+    document.querySelectorAll('.btn-fun').forEach(btn => {
+        btn.addEventListener('click', () => { try { SoundFX.pop(); } catch(e) {} });
     });
 }
 
@@ -775,4 +993,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initQuiz();
     initAppSection();
     initExportReport();
+    initSoundBindings();
 });

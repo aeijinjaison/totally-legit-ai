@@ -401,6 +401,13 @@ button { font-family: var(--font); border: none; cursor: pointer; transition: al
 .toast.show { bottom: 24px; }
 
 /* ═══════════════════════════════════
+   COLLAPSE ANIMATION
+   ═══════════════════════════════════ */
+.debris-particle { position: fixed; pointer-events: none; z-index: 9000; border-radius: 2px; }
+body.collapsing { overflow: hidden; }
+.collapse-target { will-change: transform, opacity; }
+
+/* ═══════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════ */
 @media (max-width: 768px) {
