@@ -1027,33 +1027,37 @@ This document is certified 100% vibes-based. Do not cite in court.
     });
 }
 
-// ═══ COLLAPSE SEQUENCE (13s Letter-by-Letter) ═══
+// ═══ COLLAPSE SEQUENCE (6s — elements rain onto final screen) ═══
 function initCollapseSequence() {
     let collapseTriggered = false;
     return function triggerCollapse() {
         if (collapseTriggered) return;
         collapseTriggered = true;
         document.body.classList.add('collapsing');
-        // Play fall soundtrack immediately
-        const fallAudio = AudioFiles.playFall(1.0);
-        // Step 1: Pre-shake warning 800ms
+        // Play fall soundtrack — continues on final screen
+        AudioFiles.playFall(1.0);
+
+        // ═══ STEP 0: Show final screen BEHIND everything immediately ═══
+        // It sits behind the content so elements rain down ONTO it
+        showCollapseEndScreen();
+
+        // ═══ STEP 1: Quick shake warning (500ms) ═══
         let shakeCount = 0, shakeMag = 2;
         const preShake = setInterval(() => {
-            shakeMag += 0.5;
-            const x = (Math.random() * shakeMag * 2) - shakeMag;
-            const y = (Math.random() * shakeMag) - (shakeMag / 2);
-            document.body.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+            shakeMag += 1;
+            document.body.style.transform = 'translate(' + ((Math.random() * shakeMag * 2) - shakeMag) + 'px,' + ((Math.random() * shakeMag) - shakeMag / 2) + 'px)';
             shakeCount++;
-            if (shakeCount > 15) { clearInterval(preShake); document.body.style.transform = ''; }
+            if (shakeCount > 10) { clearInterval(preShake); document.body.style.transform = ''; }
         }, 50);
-        // Step 2: After pre-shake, split text + animate
+
+        // ═══ STEP 2: After shake, detach & rain everything down ═══
         setTimeout(() => {
-            // Split text into individual letter spans
+            // Split text into letters
             const textSels = ['h1','h2','h3','h4','.headline','.subheadline','.section-title','.feature-title','.plan-name','.stat-label','.quote','.reviewer-name','.hero-fine-print','.hero-tiny-text','.tag','.badge','.loading-logo'];
             const textEls = [];
             textSels.forEach(sel => {
                 document.querySelectorAll(sel).forEach(el => {
-                    if (!el.closest('#ending') && !el.closest('.modal-overlay') && !el.closest('#confetti-canvas') && !el.closest('#toast') && !el.closest('#persistent-badge')) textEls.push(el);
+                    if (!el.closest('#ending') && !el.closest('.modal-overlay') && !el.closest('#collapse-final-screen')) textEls.push(el);
                 });
             });
             textEls.forEach(el => {
@@ -1066,105 +1070,141 @@ function initCollapseSequence() {
             // Collect targets
             const excludeIds = ['ending','confetti-canvas','toast','persistent-badge','sales-modal','review-modal','collapse-final-screen'];
             const letterSpans = Array.from(document.querySelectorAll('.fall-letter')).filter(el => !excludeIds.some(id => el.closest('#' + id)));
-            const buttons = Array.from(document.querySelectorAll('button, .btn')).filter(el => !excludeIds.some(id => el.closest('#' + id)) && !el.classList.contains('fall-letter'));
-            const bigEls = Array.from(document.querySelectorAll('.feature-card, .pricing-card, .testimonial-card, .stat-item, .hero-dashboard, .ai-chat-box, .quiz-card, .waitlist-box, .app-store-btn, .ghost-item, footer, .navbar')).filter(el => !excludeIds.some(id => el.closest('#' + id)));
+            const buttons = Array.from(document.querySelectorAll('button, .btn, .btn-primary, .btn-outl, .cta-btn, .btn-fun')).filter(el => !excludeIds.some(id => el.closest('#' + id)) && !el.classList.contains('fall-letter'));
+            const bigEls = Array.from(document.querySelectorAll('.feature-card, .pricing-card, .testimonial-card, .stat-item, .hero-dashboard, .ai-chat-box, .quiz-card, .waitlist-box, .app-store-btn, .ghost-item, footer, .navbar, .ab-banner, section')).filter(el => !excludeIds.some(id => el.closest('#' + id)));
             const isMobile = window.innerWidth <= 768;
-            // Letters fall in a wave (0-8s)
+            const vh = window.innerHeight;
+
+            // ═══ LETTERS: scatter-fall 0ms–3000ms ═══
             letterSpans.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
             letterSpans.forEach((letter, idx) => {
                 const rect = letter.getBoundingClientRect();
-                const waveDelay = (rect.top / document.body.scrollHeight) * 5000;
-                const totalDelay = Math.min(waveDelay + idx * 8 + Math.random() * 300, 7000);
-                const rot = (Math.random() * 120) - 60, drift = (Math.random() * 300) - 150;
-                const dur = 800 + Math.random() * 1200;
+                // Quick wave: top letters go first
+                const delay = Math.min((rect.top / document.body.scrollHeight) * 2000 + idx * 3 + Math.random() * 200, 2800);
+                const rot = (Math.random() * 200) - 100;
+                const drift = (Math.random() * 400) - 200;
+                const dur = 600 + Math.random() * 800;
+                // Funny: some letters go UP first then fall
+                const goUp = Math.random() > 0.7;
                 setTimeout(() => {
-                    letter.style.transition = 'transform ' + dur + 'ms cubic-bezier(0.55,0,1,0.45), opacity ' + (dur * 0.5) + 'ms ease ' + (dur * 0.5) + 'ms';
-                    letter.style.transform = 'translateY(' + (window.innerHeight * 1.5 + Math.random() * 500) + 'px) translateX(' + drift + 'px) rotate(' + rot + 'deg)';
-                    letter.style.opacity = '0';
-                }, totalDelay);
+                    if (goUp) {
+                        letter.style.transition = 'transform 0.15s cubic-bezier(0.34,1.56,0.64,1)';
+                        letter.style.transform = 'translateY(-' + (30 + Math.random() * 50) + 'px) rotate(' + (rot * 0.3) + 'deg)';
+                        setTimeout(() => {
+                            letter.style.transition = 'transform ' + dur + 'ms cubic-bezier(0.45,0,1,0.45), opacity ' + (dur * 0.4) + 'ms ease ' + (dur * 0.6) + 'ms';
+                            letter.style.transform = 'translateY(' + (vh * 2 + Math.random() * 300) + 'px) translateX(' + drift + 'px) rotate(' + rot + 'deg)';
+                            letter.style.opacity = '0';
+                        }, 160);
+                    } else {
+                        letter.style.transition = 'transform ' + dur + 'ms cubic-bezier(0.45,0,1,0.45), opacity ' + (dur * 0.4) + 'ms ease ' + (dur * 0.6) + 'ms';
+                        letter.style.transform = 'translateY(' + (vh * 2 + Math.random() * 300) + 'px) translateX(' + drift + 'px) rotate(' + rot + 'deg)';
+                        letter.style.opacity = '0';
+                    }
+                }, delay);
             });
-            // Buttons fall with bounce (0.5-9s)
+
+            // ═══ BUTTONS: bounce up then tumble down (500ms–4000ms) ═══
             buttons.forEach(btn => {
                 const rect = btn.getBoundingClientRect();
                 if (rect.width === 0 || rect.height === 0) return;
-                const delay = 500 + (rect.top / document.body.scrollHeight) * 4000 + Math.random() * 1500;
-                const rot = isMobile ? (Math.random() * 120) - 60 : (Math.random() * 180) - 90;
-                const drift = (Math.random() * 400) - 200;
+                const delay = 300 + (rect.top / document.body.scrollHeight) * 1500 + Math.random() * 800;
+                const rot = isMobile ? (Math.random() * 180) - 90 : (Math.random() * 360) - 180;
+                const drift = (Math.random() * 500) - 250;
                 setTimeout(() => {
-                    btn.style.transition = 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)';
-                    btn.style.transform = 'translateY(-30px) rotate(' + (rot * 0.2) + 'deg) scale(1.1)';
+                    // Funny: buttons "jump" up before falling
+                    btn.style.transition = 'transform 0.2s cubic-bezier(0.34,1.8,0.64,1)';
+                    btn.style.transform = 'translateY(-' + (40 + Math.random() * 60) + 'px) rotate(' + (rot * 0.15) + 'deg) scale(1.2)';
                     setTimeout(() => {
-                        btn.style.transition = 'transform 1000ms cubic-bezier(0.55,0,1,0.45), opacity 600ms ease 400ms';
-                        btn.style.transform = 'translateY(' + (window.innerHeight * 1.8) + 'px) translateX(' + drift + 'px) rotate(' + rot + 'deg) scale(0.8)';
+                        btn.style.transition = 'transform 800ms cubic-bezier(0.45,0,1,0.45), opacity 400ms ease 400ms';
+                        btn.style.transform = 'translateY(' + (vh * 2.5) + 'px) translateX(' + drift + 'px) rotate(' + rot + 'deg) scale(0.6)';
                         btn.style.opacity = '0';
-                    }, 260);
+                    }, 220);
                 }, delay);
             });
-            // Big elements fall slowly (2-13s)
+
+            // ═══ BIG ELEMENTS: tip then crash (1000ms–5500ms) ═══
             bigEls.forEach(el => {
                 const rect = el.getBoundingClientRect();
                 if (rect.width === 0 || rect.height === 0) return;
-                const delay = 2000 + (rect.top / document.body.scrollHeight) * 5000 + Math.random() * 2000;
-                const rot = isMobile ? (Math.random() * 20) - 10 : (Math.random() * 35) - 17.5;
-                const drift = (Math.random() * 200) - 100;
+                const delay = 800 + (rect.top / document.body.scrollHeight) * 2000 + Math.random() * 1000;
+                const rot = isMobile ? (Math.random() * 30) - 15 : (Math.random() * 50) - 25;
+                const drift = (Math.random() * 300) - 150;
+                const tipDir = Math.random() > 0.5 ? 'left' : 'right';
                 setTimeout(() => {
-                    el.style.transformOrigin = 'bottom center';
-                    el.style.transition = 'transform 0.4s ease';
-                    el.style.transform = 'rotate(' + (rot * 0.4) + 'deg)';
+                    el.style.transformOrigin = tipDir === 'left' ? 'bottom left' : 'bottom right';
+                    // Funny: tip to one side first
+                    el.style.transition = 'transform 0.3s ease';
+                    el.style.transform = 'rotate(' + (tipDir === 'left' ? -8 : 8) + 'deg)';
                     setTimeout(() => {
-                        el.style.transition = 'transform 2500ms cubic-bezier(0.55,0,1,0.45), opacity 1500ms ease 1000ms';
-                        el.style.transform = 'translateY(' + (window.innerHeight * 2) + 'px) translateX(' + drift + 'px) rotate(' + rot + 'deg)';
+                        // Then crash down
+                        el.style.transition = 'transform 1200ms cubic-bezier(0.45,0,1,0.45), opacity 800ms ease 400ms';
+                        el.style.transform = 'translateY(' + (vh * 2) + 'px) translateX(' + drift + 'px) rotate(' + rot + 'deg)';
                         el.style.opacity = '0';
-                    }, 420);
+                    }, 350);
                 }, delay);
             });
-            // Continuous shake during collapse (13s, fading)
-            let mainSC = 0;
+
+            // ═══ CONTINUOUS SHAKE (6s, fading intensity) ═══
+            let sc = 0;
+            const shakeMax = 46; // ~6s at 130ms intervals
             const mainShake = setInterval(() => {
-                mainSC++;
-                const intensity = Math.max(1, 8 * (1 - mainSC / 100));
-                document.body.style.transform = 'translate(' + ((Math.random() * intensity * 2) - intensity) + 'px,' + ((Math.random() * intensity) - (intensity / 2)) + 'px)';
-                if (mainSC >= 100) { clearInterval(mainShake); document.body.style.transform = ''; }
+                sc++;
+                const intensity = Math.max(0.5, 7 * (1 - sc / shakeMax));
+                document.body.style.transform = 'translate(' + ((Math.random() * intensity * 2) - intensity) + 'px,' + ((Math.random() * intensity) - intensity / 2) + 'px)';
+                if (sc >= shakeMax) { clearInterval(mainShake); document.body.style.transform = ''; }
             }, 130);
-            // Debris particles spread over 10s
-            const debrisCount = isMobile ? 25 : 50;
+
+            // ═══ DEBRIS PARTICLES (rain over 5s) ═══
+            const debrisCount = isMobile ? 20 : 40;
             const colors = ['#6c63ff','#00d4aa','#ff4444','#ffffff','#ffb800','#ff6b9d','#8b5cf6'];
             for (let d = 0; d < debrisCount; d++) {
                 setTimeout(() => {
                     const p = document.createElement('div');
-                    const sz = 4 + Math.random() * 16, dur2 = 1500 + Math.random() * 2500;
-                    const color = colors[Math.floor(Math.random() * colors.length)];
-                    p.style.cssText = 'position:fixed;width:'+sz+'px;height:'+sz+'px;left:'+(Math.random()*100)+'%;top:'+(-30+Math.random()*200)+'px;background:'+color+';border-radius:'+(Math.random()>0.5?'50%':Math.random()*4+'px')+';z-index:9000;pointer-events:none;opacity:1;';
+                    const sz = 4 + Math.random() * 14, dur2 = 800 + Math.random() * 1500;
+                    p.style.cssText = 'position:fixed;width:'+sz+'px;height:'+sz+'px;left:'+(Math.random()*100)+'%;top:'+(-20+Math.random()*150)+'px;background:'+colors[Math.floor(Math.random()*colors.length)]+';border-radius:'+(Math.random()>0.5?'50%':Math.random()*4+'px')+';z-index:9600;pointer-events:none;opacity:1;';
                     document.body.appendChild(p);
-                    setTimeout(() => { const dX = (Math.random()*300)-150; p.style.transition = 'transform '+dur2+'ms cubic-bezier(0.55,0,1,0.45), opacity 0.5s ease '+(dur2-500)+'ms'; p.style.transform = 'translateY('+(window.innerHeight+400)+'px) translateX('+dX+'px) rotate('+(180+Math.random()*720)+'deg)'; p.style.opacity = '0'; }, 30);
-                    setTimeout(() => { if (p.parentNode) p.parentNode.removeChild(p); }, dur2 + 600);
-                }, Math.random() * 10000);
+                    setTimeout(() => { const dX = (Math.random()*200)-100; p.style.transition = 'transform '+dur2+'ms cubic-bezier(0.45,0,1,0.45), opacity 0.3s ease '+(dur2-300)+'ms'; p.style.transform = 'translateY('+(vh+200)+'px) translateX('+dX+'px) rotate('+(180+Math.random()*540)+'deg)'; p.style.opacity = '0'; }, 20);
+                    setTimeout(() => { if (p.parentNode) p.parentNode.removeChild(p); }, dur2 + 400);
+                }, Math.random() * 5000);
             }
-            // At 13s: transition to final screen
+
+            // ═══ AT 6s: Reveal final screen fully ═══
             setTimeout(() => {
                 document.body.style.transform = '';
                 document.body.classList.remove('collapsing');
-                if (AudioFiles._fallInstance) { try { AudioFiles._fallInstance.volume = 0.4; } catch(e) {} }
-                showCollapseEndScreen();
-                setTimeout(() => { AudioFiles._fallInstance = null; }, 3500);
-            }, 13000);
-        }, 800);
+                // Fade the final screen to full opacity (it was at 0.95 behind content)
+                const fs = document.getElementById('collapse-final-screen');
+                if (fs) fs.style.opacity = '1';
+                // BGM keeps playing — no volume change, no stopping
+            }, 6000);
+        }, 500); // after pre-shake
     };
 }
 
 // ═══ FINAL COLLAPSE SCREEN ═══
+// Shows immediately BEHIND the content so elements rain onto it
 function showCollapseEndScreen() {
     const fs = document.createElement('div');
     fs.id = 'collapse-final-screen';
-    fs.style.cssText = 'position:fixed;inset:0;background:#0a0a0f;z-index:9500;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 1.2s ease;';
+    // z-index 9400 = behind content (which is at normal stacking) but will be visible as content falls away
+    // opacity starts at 0, fades up quickly so user sees it through gaps as elements fall
+    fs.style.cssText = 'position:fixed;inset:0;background:#0a0a0f;z-index:9400;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 0.8s ease;';
     fs.innerHTML = '<div style="text-align:center;padding:40px 20px;max-width:580px"><div style="font-size:64px;margin-bottom:24px">🏚️</div><h1 style="font-size:clamp(24px,5vw,48px);font-weight:700;color:#ffffff;margin-bottom:16px">Well. That happened.</h1><p style="font-size:clamp(14px,2vw,18px);color:#888899;margin-bottom:8px">Our engineers are calling this</p><p style="font-size:clamp(18px,3vw,28px);color:#6c63ff;font-weight:700;margin-bottom:6px">"an aggressive UI refresh."</p><p style="font-size:clamp(12px,1.5vw,15px);color:#888899;margin-bottom:6px">Version 2.0 will have fewer physics.</p><p style="font-size:clamp(11px,1.3vw,13px);color:#444466;margin-bottom:28px;font-style:italic">(Version 2.0 does not exist. Neither did Version 1.0, honestly.)</p><p style="font-size:clamp(12px,1.5vw,14px);color:#888899;margin-bottom:32px">Kevin has been notified. Kevin watched the whole thing. Kevin clapped.</p><button id="btn-rebuild" style="background:#6c63ff;color:#ffffff;border:none;padding:14px 32px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;min-height:44px;transition:background 0.2s ease;margin-bottom:12px">🔨 Rebuild Everything</button><br><button id="btn-stay-fallen" style="background:transparent;color:#444466;border:none;font-size:12px;cursor:pointer;font-family:inherit;padding:8px;text-decoration:underline">Leave it. It has character now.</button><p style="font-size:11px;color:#333355;margin-top:16px">No pixels were harmed. Some were mildly displaced. Kevin considers this growth.</p></div>';
     document.body.appendChild(fs);
-    setTimeout(() => { fs.style.opacity = '1'; }, 100);
+    // Fade in gradually — user sees it through gaps as elements fall
+    setTimeout(() => { fs.style.opacity = '0.95'; }, 800);
+    // Wire up buttons
     const rb = document.getElementById('btn-rebuild');
     if (rb) {
         rb.addEventListener('mouseenter', () => { rb.style.background = '#8b5cf6'; });
         rb.addEventListener('mouseleave', () => { rb.style.background = '#6c63ff'; });
-        rb.addEventListener('click', () => { try { SoundFX.tada(); } catch(e) {} rb.textContent = 'Rebuilding... 🔧'; rb.disabled = true; setTimeout(() => window.location.reload(), 600); });
+        rb.addEventListener('click', () => {
+            try { SoundFX.tada(); } catch(e) {}
+            // Stop fall audio on rebuild
+            if (AudioFiles._fallInstance) { try { AudioFiles._fallInstance.pause(); } catch(e) {} AudioFiles._fallInstance = null; }
+            rb.textContent = 'Rebuilding... 🔧'; rb.disabled = true;
+            setTimeout(() => window.location.reload(), 600);
+        });
     }
     const stayBtn = document.getElementById('btn-stay-fallen');
     if (stayBtn) {
